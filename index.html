@@ -10,11 +10,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://cdn.glitch.global/icon-192.png">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
             --primary: #4CAF50;
@@ -614,7 +610,7 @@
             
             if (matches.length > 0) {
                 suggestionsDiv.innerHTML = matches.map(name => 
-                    <div class="suggestion-item" onclick="selectProduct('${name}')">${name}</div>
+                    `<div class="suggestion-item" onclick="selectProduct('${name}')">${name}</div>`
                 ).join('');
                 suggestionsDiv.classList.add('active');
             } else {
@@ -680,7 +676,7 @@
             document.getElementById('stateSelector').style.display = 'none';
             
             // Mostrar confirmación
-            alert(✅ ${newProduct.name} agregado correctamente);
+            alert(`✅ ${newProduct.name} agregado correctamente`);
         }
 
         // ========== RENDERIZAR PRODUCTOS ==========
@@ -716,15 +712,13 @@
                     <div class="product-item ${status.class}" onclick="openEditModal(${product.id})">
                         <div class="product-info">
                             <h3>${storageIcon} ${product.name}</h3>
-                            <p>${product.state ? (${product.state}) : ''} ${product.storage}</p>
+                            <p>${product.state ? `(${product.state})` : ''} ${product.storage}</p>
                         </div>
                         <div class="product-status">
                             <div class="days-left ${status.colorClass}">
-                                ${daysLeft > 0 ? ${daysLeft}d : '❌'}
+                                ${daysLeft > 0 ? `${daysLeft}d` : '❌'}
                             </div>
-<p style="font-size: 0.8em; color: #999;">
-                                ${formatDate(product.expiryDate)}
-                            </p>
+                            <p style="font-size: 0.8em; color: #999;"> ${formatDate(product.expiryDate)} </p>
                         </div>
                     </div>
                 `;
@@ -836,7 +830,7 @@
             document.getElementById('customDaysDespensa').value = '';
             document.getElementById('customHasStates').checked = false;
             
-            alert(✅ Producto "${name}" agregado a la base de datos);
+            alert(`✅ Producto "${name}" agregado a la base de datos`);
         }
 
         // ========== EDITAR/ELIMINAR PRODUCTO ==========
@@ -889,7 +883,7 @@
         function sendEmailNotification(products) {
             // Usar servicio gratuito EmailJS
             const message = products.map(p => 
-                ⚠ ${p.name} (${p.storage}) vence en ${getDaysLeft(p.expiryDate)} días
+                `⚠ ${p.name} (${p.storage}) vence en ${getDaysLeft(p.expiryDate)} días`
             ).join('\n');
             
             console.log('📧 Notificación:', message);
@@ -920,6 +914,3 @@
     </script>
 </body>
 </html>
-
-
-                        
