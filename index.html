@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FreshKeeper">
+    <title>FreshKeeper</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn.glitch.global/icon-192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4CAF50;
+            --danger: #f44336;
+            --warning: #ff9800;
+            --info: #2196F3;
+            --bg: #f5f5f5;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            padding-bottom: 20px;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        header h1 { font-size: 1.5em; }
+
+        .icon-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .icon-btn:active { 
+            background: rgba(255,255,255,0.4);
+            transform: scale(0.95);
+        }
+
+        .card {
+            background: white;
+            margin: 15px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        input[type="text"], input[type="email"], input[type="number"], input[type="date"], select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .suggestions {
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .suggestions.active { display: block; }
+
+        .suggestion-item {
+            padding: 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 16px;
+        }
+
+        .suggestion-item:active { background: #f5f5f5; }
+
+        .storage-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .storage-btn {
+            padding: 15px 10px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .storage-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .state-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .state-selector label {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn-primary, .btn-secondary, .btn-danger {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+        }
+
+        .btn-secondary {
+            background: var(--info);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-primary:active, .btn-secondary:active, .btn-danger:active {
+            transform: scale(0.98);
+            opacity: 0.8;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .filter-tab {
+            padding: 10px 20px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+
+        .filter-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .product-item {
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .product-item.expiring-soon {
+            border-color: var(--warning);
+            background: #fff3e0;
+        }
+
+        .product-item.expired {
+            border-color: var(--danger);
+            background: #ffebee;
+        }
+
+        .product-item.fresh {
+            border-color: var(--primary);
+        }
+
+        .product-info h3 {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .product-info p {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .product-status {
+            text-align: right;
+        }
+
+        .days-left {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .days-left.good { color: var(--primary); }
+        .days-left.warning { color: var(--warning); }
+        .days-left.danger { color: var(--danger); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 20px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 2em;
+            cursor: pointer;
+            color: #666;
+            width: 40px;
+            height: 40px;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state h3 {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>🍎 FreshKeeper</h1>
+            <button id="configBtn" class="icon-btn">⚙</button>
+        </header>
+
+        <section id="quickAdd" class="card">
+            <h2>➕ Agregar Producto</h2>
+            <div class="quick-form">
+                <input type="text" id="searchProduct" placeholder="🔍 Buscar producto..." autocomplete="off">
+                <div id="productSuggestions" class="suggestions"></div>
+                
+                <div class="storage-selector">
+                    <button class="storage-btn active" data-storage="heladera">🧊 Heladera</button>
+                    <button class="storage-btn" data-storage="freezer">❄ Freezer</button>
+                    <button class="storage-btn" data-storage="despensa">📦 Despensa</button>
+                </div>
+
+                <div class="state-selector" id="stateSelector" style="display:none;">
+                    <label>
+                        <input type="radio" name="state" value="cerrado" checked>
+                        <span>Cerrado</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="state" value="abierto">
+                        <span>Abierto</span>
+                    </label>
+                </div>
+
+                <button id="addProductBtn" class="btn-primary" disabled>Agregar Producto</button>
+            </div>
+        </section>
+
+        <section id="productList" class="card">
+            <h2>📋 Mis Productos (<span id="productCount">0</span>)</h2>
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all">Todos</button>
+                <button class="filter-tab" data-filter="heladera">Heladera</button>
+                <button class="filter-tab" data-filter="freezer">Freezer</button>
+                <button class="filter-tab" data-filter="despensa">Despensa</button>
+            </div>
+            <div id="products"></div>
+        </section>
+
+        <!-- Modal Configuración -->
+        <div id="configModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>⚙ Configuración</h2>
+                    <button class="close-btn" onclick="closeConfigModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>📧 Email para notificaciones:</label>
+                        <input type="email" id="userEmail" placeholder="tu@email.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>⏰ Días de aviso previo:</label>
+                        <input type="number" id="warningDays" value="3" min="1" max="7">
+                    </div>
+
+                    <h3 style="margin: 20px 0 10px 0;">➕ Producto Personalizado</h3>
+                    <div class="form-group">
+                        <input type="text" id="customProductName" placeholder="Nombre del producto">
+                    </div>
+                    <div class="form-group">
+                        <label>Días (heladera):</label>
+                        <input type="number" id="customDaysHeladera" placeholder="7">
+                    </div>
+                    <div class="form-group">
+                        <label>Días (freezer):</label>
+                        <input type="number" id="customDaysFreezer" placeholder="90">
+                    </div>
+                    <div class="form-group">
+                        <label>Días (despensa):</label>
+                        <input type="number" id="customDaysDespensa" placeholder="30">
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="customHasStates" style="width: auto;">
+                            ¿Tiene estados (abierto/cerrado)?
+                        </label>
+                    </div>
+                    <button id="addCustomProductBtn" class="btn-secondary">Agregar Producto</button>
+
+                    <button id="saveConfigBtn" class="btn-primary">💾 Guardar Configuración</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Edición -->
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>✏ Editar Producto</h2>
+                    <button class="close-btn" onclick="closeEditModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                      <label>Fecha de vencimiento:</label>
+                        <input type="date" id="editExpiryDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Ubicación:</label>
+                        <select id="editStorage">
+                            <option value="heladera">🧊 Heladera</option>
+                            <option value="freezer">❄ Freezer</option>
+                            <option value="despensa">📦 Despensa</option>
+                        </select>
+                    </div>
+                    <div class="button-group">
+                        <button id="saveEditBtn" class="btn-primary">Guardar</button>
+                        <button id="deleteProductBtn" class="btn-danger">Eliminar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== BASE DE DATOS DE PRODUCTOS ==========
+        const productsDatabase = {
+            // LÁCTEOS
+            'leche': { heladera: 7, freezer: 90, despensa: 0, hasStates: true, abierto: 3 },
+            'yogurt': { heladera: 14, freezer: 60, despensa: 0, hasStates: true, abierto: 7 },
+            'queso crema': { heladera: 14, freezer: 60, despensa: 0, hasStates: true, abierto: 7 },
+            'queso rallado': { heladera: 30, freezer: 180, despensa: 0, hasStates: true, abierto: 14 },
+            'queso en barra': { heladera: 21, freezer: 180, despensa: 0, hasStates: false },
+            'manteca': { heladera: 60, freezer: 180, despensa: 0, hasStates: true, abierto: 30 },
+            'crema de leche': { heladera: 7, freezer: 60, despensa: 0, hasStates: true, abierto: 3 },
+            
+            // CARNES
+            'carne picada': { heladera: 2, freezer: 120, despensa: 0, hasStates: false },
+            'carne vacuna': { heladera: 3, freezer: 180, despensa: 0, hasStates: false },
+            'pollo': { heladera: 2, freezer: 270, despensa: 0, hasStates: false },
+            'milanesas': { heladera: 2, freezer: 90, despensa: 0, hasStates: false },
+            'pescado': { heladera: 2, freezer: 180, despensa: 0, hasStates: false },
+            'hamburguesas': { heladera: 2, freezer: 120, despensa: 0, hasStates: false },
+            'salchichas': { heladera: 7, freezer: 60, despensa: 0, hasStates: true, abierto: 5 },
+            'jamón': { heladera: 7, freezer: 60, despensa: 0, hasStates: true, abierto: 5 },
+            'salame': { heladera: 21, freezer: 90, despensa: 0, hasStates: true, abierto: 14 },
+            
+            // FRUTAS
+            'banana': { heladera: 7, freezer: 90, despensa: 5, hasStates: false },
+            'manzana': { heladera: 30, freezer: 180, despensa: 7, hasStates: false },
+            'naranja': { heladera: 21, freezer: 0, despensa: 7, hasStates: false },
+            'frutilla': { heladera: 5, freezer: 180, despensa: 0, hasStates: false },
+            'uva': { heladera: 7, freezer: 180, despensa: 0, hasStates: false },
+            'pera': { heladera: 21, freezer: 180, despensa: 7, hasStates: false },
+            'durazno': { heladera: 5, freezer: 180, despensa: 3, hasStates: false },
+            'sandía': { heladera: 7, freezer: 0, despensa: 5, hasStates: false },
+            'melón': { heladera: 7, freezer: 0, despensa: 5, hasStates: false },
+            
+            // VERDURAS
+            'lechuga': { heladera: 7, freezer: 0, despensa: 0, hasStates: false },
+            'tomate': { heladera: 7, freezer: 180, despensa: 3, hasStates: false },
+            'cebolla': { heladera: 14, freezer: 180, despensa: 30, hasStates: false },
+            'papa': { heladera: 21, freezer: 180, despensa: 60, hasStates: false },
+            'zanahoria': { heladera: 21, freezer: 180, despensa: 0, hasStates: false },
+            'zapallo': { heladera: 30, freezer: 180, despensa: 60, hasStates: false },
+            'brócoli': { heladera: 7, freezer: 180, despensa: 0, hasStates: false },
+            'espinaca': { heladera: 5, freezer: 180, despensa: 0, hasStates: false },
+            'pimiento': { heladera: 7, freezer: 180, despensa: 0, hasStates: false },
+            
+            // BEBIDAS
+            'gaseosa': { heladera: 180, freezer: 0, despensa: 365, hasStates: true, abierto: 7 },
+            'agua': { heladera: 180, freezer: 0, despensa: 365, hasStates: true, abierto: 7 },
+            'jugo': { heladera: 30, freezer: 0, despensa: 180, hasStates: true, abierto: 5 },
+            'cerveza': { heladera: 180, freezer: 0, despensa: 180, hasStates: false },
+            'vino': { heladera: 730, freezer: 0, despensa: 1825, hasStates: true, abierto: 3 },
+            'vino blanco': { heladera: 365, freezer: 0, despensa: 730, hasStates: true, abierto: 3 },
+            
+            // HUEVOS Y OTROS
+            'huevos': { heladera: 30, freezer: 0, despensa: 0, hasStates: false },
+            'mayonesa': { heladera: 60, freezer: 0, despensa: 0, hasStates: true, abierto: 30 },
+            'ketchup': { heladera: 180, freezer: 0, despensa: 0, hasStates: true, abierto: 90 },
+            'mostaza': { heladera: 180, freezer: 0, despensa: 0, hasStates: true, abierto: 90 },
+            
+            // CONGELADOS
+            'pizza congelada': { heladera: 0, freezer: 180, despensa: 0, hasStates: false },
+            'helado': { heladera: 0, freezer: 90, despensa: 0, hasStates: true, abierto: 30 },
+            'papas congeladas': { heladera: 0, freezer: 365, despensa: 0, hasStates: true, abierto: 90 },
+            
+            // PANES Y MASAS
+            'pan': { heladera: 7, freezer: 90, despensa: 3, hasStates: false },
+            'pan rallado': { heladera: 0, freezer: 0, despensa: 180, hasStates: true, abierto: 90 },
+            'masa': { heladera: 5, freezer: 90, despensa: 0, hasStates: false },
+            
+            // OTROS
+            'mermelada': { heladera: 365, freezer: 0, despensa: 365, hasStates: true, abierto: 90 },
+            'dulce de leche': { heladera: 180, freezer: 0, despensa: 180, hasStates: true, abierto: 60 },
+        };
+
+        // ========== ESTADO DE LA APLICACIÓN ==========
+        let myProducts = JSON.parse(localStorage.getItem('myProducts')) || [];
+        let customProducts = JSON.parse(localStorage.getItem('customProducts')) || {};
+        let config = JSON.parse(localStorage.getItem('config')) || {
+            email: '',
+            warningDays: 3
+        };
+
+        let selectedProduct = null;
+        let selectedStorage = 'heladera';
+        let currentFilter = 'all';
+        let editingProductId = null;
+
+        // ========== INICIALIZACIÓN ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            renderProducts();
+            setupEventListeners();
+            checkExpirations();
+        });
+
+        // ========== EVENT LISTENERS ==========
+        function setupEventListeners() {
+            // Búsqueda de productos
+            document.getElementById('searchProduct').addEventListener('input', handleSearch);
+            
+            // Botones de almacenamiento
+            document.querySelectorAll('.storage-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.storage-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedStorage = this.dataset.storage;
+                    updateStateSelector();
+                });
+            });
+            
+            // Agregar producto
+            document.getElementById('addProductBtn').addEventListener('click', addProduct);
+            
+            // Filtros
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    currentFilter = this.dataset.filter;
+                    renderProducts();
+                });
+            });
+            
+            // Configuración
+            document.getElementById('configBtn').addEventListener('click', openConfigModal);
+            document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
+            document.getElementById('addCustomProductBtn').addEventListener('click', addCustomProduct);
+            
+            // Edición
+            document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
+            document.getElementById('deleteProductBtn').addEventListener('click', deleteProduct);
+        }
+
+        // ========== BÚSQUEDA DE PRODUCTOS ==========
+        function handleSearch(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const suggestionsDiv = document.getElementById('productSuggestions');
+            
+            if (query.length < 2) {
+                suggestionsDiv.classList.remove('active');
+                document.getElementById('addProductBtn').disabled = true;
+                selectedProduct = null;
+                return;
+            }
+            
+            const allProducts = { ...productsDatabase, ...customProducts };
+            const matches = Object.keys(allProducts)
+                .filter(name => name.toLowerCase().includes(query))
+                .slice(0, 10);
+            
+            if (matches.length > 0) {
+                suggestionsDiv.innerHTML = matches.map(name => 
+                    <div class="suggestion-item" onclick="selectProduct('${name}')">${name}</div>
+                ).join('');
+                suggestionsDiv.classList.add('active');
+            } else {
+                suggestionsDiv.classList.remove('active');
+            }
+        }
+
+        function selectProduct(productName) {
+            selectedProduct = productName;
+            document.getElementById('searchProduct').value = productName;
+            document.getElementById('productSuggestions').classList.remove('active');
+            document.getElementById('addProductBtn').disabled = false;
+            updateStateSelector();
+        }
+
+        function updateStateSelector() {
+            const allProducts = { ...productsDatabase, ...customProducts };
+            const product = allProducts[selectedProduct];
+            const stateSelector = document.getElementById('stateSelector');
+            
+            if (product && product.hasStates) {
+                stateSelector.style.display = 'flex';
+            } else {
+                stateSelector.style.display = 'none';
+            }
+        }
+
+        // ========== AGREGAR PRODUCTO ==========
+        function addProduct() {
+            if (!selectedProduct) return;
+            
+            const allProducts = { ...productsDatabase, ...customProducts };
+            const productData = allProducts[selectedProduct];
+            const state = document.querySelector('input[name="state"]:checked').value;
+            
+            let daysToExpire = productData[selectedStorage];
+            
+            if (productData.hasStates && state === 'abierto' && productData.abierto) {
+                daysToExpire = productData.abierto;
+            }
+            
+            const expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + daysToExpire);
+            
+            const newProduct = {
+                id: Date.now(),
+                name: selectedProduct,
+                storage: selectedStorage,
+                state: productData.hasStates ? state : null,
+                addedDate: new Date().toISOString(),
+                expiryDate: expiryDate.toISOString(),
+                daysToExpire: daysToExpire
+            };
+            
+            myProducts.push(newProduct);
+            saveProducts();
+            renderProducts();
+            
+            // Limpiar formulario
+            document.getElementById('searchProduct').value = '';
+            document.getElementById('addProductBtn').disabled = true;
+            selectedProduct = null;
+            document.getElementById('stateSelector').style.display = 'none';
+            
+            // Mostrar confirmación
+            alert(✅ ${newProduct.name} agregado correctamente);
+        }
+
+        // ========== RENDERIZAR PRODUCTOS ==========
+        function renderProducts() {
+            const productsDiv = document.getElementById('products');
+            let filtered = myProducts;
+            
+            if (currentFilter !== 'all') {
+                filtered = myProducts.filter(p => p.storage === currentFilter);
+            }
+            
+            // Ordenar por fecha de vencimiento
+            filtered.sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
+            
+            document.getElementById('productCount').textContent = filtered.length;
+            
+            if (filtered.length === 0) {
+                productsDiv.innerHTML = `
+                    <div class="empty-state">
+                        <h3>🤷</h3>
+                        <p>No hay productos</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            productsDiv.innerHTML = filtered.map(product => {
+                const daysLeft = getDaysLeft(product.expiryDate);
+                const status = getProductStatus(daysLeft);
+                const storageIcon = getStorageIcon(product.storage);
+                
+                return `
+                    <div class="product-item ${status.class}" onclick="openEditModal(${product.id})">
+                        <div class="product-info">
+                            <h3>${storageIcon} ${product.name}</h3>
+                            <p>${product.state ? (${product.state}) : ''} ${product.storage}</p>
+                        </div>
+                        <div class="product-status">
+                            <div class="days-left ${status.colorClass}">
+                                ${daysLeft > 0 ? ${daysLeft}d : '❌'}
+                            </div>
+<p style="font-size: 0.8em; color: #999;">
+                                ${formatDate(product.expiryDate)}
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ========== FUNCIONES AUXILIARES ==========
+        function getDaysLeft(expiryDate) {
+            const now = new Date();
+            const expiry = new Date(expiryDate);
+            const diff = expiry - now;
+            return Math.ceil(diff / (1000 * 60 * 60 * 24));
+        }
+
+        function getProductStatus(daysLeft) {
+            if (daysLeft < 0) {
+                return { class: 'expired', colorClass: 'danger' };
+            } else if (daysLeft <= config.warningDays) {
+                return { class: 'expiring-soon', colorClass: 'warning' };
+            } else {
+                return { class: 'fresh', colorClass: 'good' };
+            }
+        }
+
+        function getStorageIcon(storage) {
+            const icons = {
+                'heladera': '🧊',
+                'freezer': '❄',
+                'despensa': '📦'
+            };
+            return icons[storage] || '📦';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+        }
+
+        // ========== MODALES ==========
+        function openConfigModal() {
+            document.getElementById('configModal').classList.add('active');
+            document.getElementById('userEmail').value = config.email;
+            document.getElementById('warningDays').value = config.warningDays;
+        }
+
+        function closeConfigModal() {
+            document.getElementById('configModal').classList.remove('active');
+        }
+
+        function openEditModal(productId) {
+            editingProductId = productId;
+            const product = myProducts.find(p => p.id === productId);
+            
+            if (!product) return;
+            
+            document.getElementById('editExpiryDate').value = product.expiryDate.split('T')[0];
+            document.getElementById('editStorage').value = product.storage;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+            editingProductId = null;
+        }
+
+        // ========== GUARDAR CONFIGURACIÓN ==========
+        function saveConfig() {
+            config.email = document.getElementById('userEmail').value;
+            config.warningDays = parseInt(document.getElementById('warningDays').value);
+            
+            localStorage.setItem('config', JSON.stringify(config));
+            alert('✅ Configuración guardada');
+            closeConfigModal();
+            renderProducts();
+        }
+
+        function loadConfig() {
+            document.getElementById('userEmail').value = config.email;
+            document.getElementById('warningDays').value = config.warningDays;
+        }
+
+        // ========== PRODUCTO PERSONALIZADO ==========
+        function addCustomProduct() {
+            const name = document.getElementById('customProductName').value.trim().toLowerCase();
+            const heladera = parseInt(document.getElementById('customDaysHeladera').value) || 0;
+            const freezer = parseInt(document.getElementById('customDaysFreezer').value) || 0;
+            const despensa = parseInt(document.getElementById('customDaysDespensa').value) || 0;
+            const hasStates = document.getElementById('customHasStates').checked;
+            
+            if (!name) {
+                alert('❌ Ingresa un nombre de producto');
+                return;
+            }
+            
+            customProducts[name] = {
+                heladera,
+                freezer,
+                despensa,
+                hasStates,
+                abierto: hasStates ? Math.floor(heladera / 2) : 0
+            };
+            
+            localStorage.setItem('customProducts', JSON.stringify(customProducts));
+            
+            // Limpiar formulario
+            document.getElementById('customProductName').value = '';
+            document.getElementById('customDaysHeladera').value = '';
+            document.getElementById('customDaysFreezer').value = '';
+            document.getElementById('customDaysDespensa').value = '';
+            document.getElementById('customHasStates').checked = false;
+            
+            alert(✅ Producto "${name}" agregado a la base de datos);
+        }
+
+        // ========== EDITAR/ELIMINAR PRODUCTO ==========
+        function saveEdit() {
+            const product = myProducts.find(p => p.id === editingProductId);
+            if (!product) return;
+            
+            product.expiryDate = new Date(document.getElementById('editExpiryDate').value).toISOString();
+            product.storage = document.getElementById('editStorage').value;
+            
+            saveProducts();
+            renderProducts();
+            closeEditModal();
+            alert('✅ Producto actualizado');
+        }
+
+        function deleteProduct() {
+            if (!confirm('¿Eliminar este producto?')) return;
+            
+            myProducts = myProducts.filter(p => p.id !== editingProductId);
+            saveProducts();
+            renderProducts();
+            closeEditModal();
+            alert('✅ Producto eliminado');
+        }
+
+        // ========== ALMACENAMIENTO ==========
+        function saveProducts() {
+            localStorage.setItem('myProducts', JSON.stringify(myProducts));
+        }
+
+        // ========== VERIFICAR VENCIMIENTOS ==========
+        function checkExpirations() {
+            if (!config.email) return;
+            
+            const expiringSoon = myProducts.filter(product => {
+                const daysLeft = getDaysLeft(product.expiryDate);
+                return daysLeft <= config.warningDays && daysLeft >= 0;
+            });
+            
+            if (expiringSoon.length > 0) {
+                sendEmailNotification(expiringSoon);
+            }
+            
+            // Verificar cada 6 horas
+            setTimeout(checkExpirations, 6 * 60 * 60 * 1000);
+        }
+
+        // ========== NOTIFICACIONES POR EMAIL ==========
+        function sendEmailNotification(products) {
+            // Usar servicio gratuito EmailJS
+            const message = products.map(p => 
+                ⚠ ${p.name} (${p.storage}) vence en ${getDaysLeft(p.expiryDate)} días
+            ).join('\n');
+            
+            console.log('📧 Notificación:', message);
+            
+            // Aquí integrarías EmailJS (ver más abajo)
+            // Por ahora solo muestra una alerta
+            if (Notification.permission === "granted") {
+                new Notification("⚠ Productos por vencer", {
+                    body: message,
+                    icon: "icon-192.png"
+                });
+            }
+        }
+
+        // ========== PEDIR PERMISOS DE NOTIFICACIÓN ==========
+        if ('Notification' in window && Notification.permission === 'default') {
+            setTimeout(() => {
+                Notification.requestPermission();
+            }, 3000);
+        }
+
+        // ========== SERVICE WORKER PARA PWA ==========
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('✅ Service Worker registrado'))
+                .catch(err => console.log('❌ Error SW:', err));
+        }
+    </script>
+</body>
+</html>
+
+
+                        
